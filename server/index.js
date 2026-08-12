@@ -14,7 +14,10 @@ await client.connect();
 const trackers = client.db(MONGODB_DB).collection('trackers');
 
 const app = express();
-app.use(cors({ origin: CLIENT_ORIGIN ? CLIENT_ORIGIN.split(',').map(value => value.trim()) : true }));
+app.use(cors({
+  origin: 'https://ornate-pastelito-daf809.netlify.app', // Replace with your actual frontend URL
+  credentials: true
+}));
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/api/health', async (_request, response) => {

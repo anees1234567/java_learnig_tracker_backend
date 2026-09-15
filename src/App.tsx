@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+  import StudyTimerProvider, { useStudyTimer } from './StudyTimerContext';
+
 type Status = 'not-started' | 'learning' | 'completed' | 'revision';
 type Topic = { id: string; title: string; status: Status; notes: string; studyMinutes: number; startedAt?: string; completedAt?: string; updatedAt: string };
 type Week = { id: string; number: number; title: string; topics: Topic[] };
@@ -7,20 +9,212 @@ type Session = { id: string; date: string; minutes: number; topicId?: string };
 type AppData = { version: 3; weeks: Week[]; sessions: Session[]; currentTopicId?: string; theme?: 'light' | 'dark' };
 
 const outline: [string, string[]][] = [
-  ['Java Fundamentals', ['What is Java?','JDK, JRE and JVM','Java compilation process','javac compiler','Java bytecode','JVM execution process','JIT compiler','Java platform independence','Variables','Primitive data types','Reference types','Operators','Conditional statements','Loops','Methods','Arrays','Strings','StringBuilder','StringBuffer']],
-  ['Object-Oriented Programming', ['Classes and Objects','Constructors','this keyword','static keyword','final keyword','Access modifiers','Encapsulation','Inheritance','Polymorphism','Method overloading','Method overriding','Abstraction','Abstract classes','Interfaces','Composition','Association','Aggregation','Interface vs Abstract class','Composition vs Inheritance']],
-  ['Java Collections', ['Collection Framework','Iterable','Collection','List','ArrayList','LinkedList','Set','HashSet','LinkedHashSet','TreeSet','Queue','PriorityQueue','Deque','Map','HashMap','LinkedHashMap','TreeMap','ConcurrentHashMap','equals()','hashCode()','HashMap internal working','Hash collisions','Load factor','Resizing','Comparable','Comparator','Collection time complexity']],
-  ['Generics', ['Why Generics?','Generic classes','Generic methods','Generic interfaces','Bounded type parameters','Wildcards','Upper bounded wildcards','Lower bounded wildcards','PECS','Type erasure']],
-  ['Exception Handling', ['Exception hierarchy','Throwable','Error','Exception','RuntimeException','Checked exceptions','Unchecked exceptions','try/catch','finally','throw','throws','Custom exceptions','Exception propagation','Try-with-resources']],
-  ['Modern Java', ['Java 8 features','Functional interfaces','Lambda expressions','Method references','Stream API','map()','filter()','flatMap()','reduce()','collect()','groupingBy()','partitioningBy()','sorted()','distinct()','findFirst()','anyMatch()','allMatch()','Optional','Date and Time API','Records','Default interface methods']],
-  ['Multithreading and Concurrency', ['Process vs Thread','Thread lifecycle','Creating threads','Runnable','Callable','ExecutorService','Thread pools','Future','CompletableFuture','synchronized','volatile','Atomic classes','Race conditions','Deadlocks','Locks','ReentrantLock','Thread safety','Concurrent collections','Java Memory Model basics','Virtual threads basics']],
-  ['JVM Internals', ['JVM architecture','Class Loader','Class loading process','Bytecode verification','Runtime Data Areas','Heap','Stack','Metaspace','PC Register','Native Method Stack','Object allocation','Stack frames','Garbage Collection','GC Roots','Young Generation','Old Generation','G1 Garbage Collector basics','Memory leaks','OutOfMemoryError','StackOverflowError','Interpreter','JIT compilation','JIT optimization']],
-  ['SQL and JDBC', ['SQL fundamentals','SELECT','WHERE','JOINs','GROUP BY','HAVING','Subqueries','Indexes','Composite indexes','Transactions','ACID','Isolation levels','JDBC','JDBC Driver','Connection','Statement','PreparedStatement','ResultSet','JDBC transactions','Connection pooling']],
-  ['Spring Core', ['What is Spring?','Spring architecture','IoC','Dependency Injection','ApplicationContext','Spring Beans','Bean lifecycle','Component scanning','@Component','@Service','@Repository','@Configuration','@Bean','Constructor injection','Bean scopes','Profiles','Spring configuration']],
-  ['Spring Boot', ['What is Spring Boot?','Spring Boot architecture','Spring Boot starters','Auto-configuration','application.properties','application.yml','Environment variables','REST APIs','@RestController','@GetMapping','@PostMapping','@PutMapping','@DeleteMapping','@RequestBody','@PathVariable','@RequestParam','ResponseEntity','Validation','@Valid','Validation annotations','Global exception handling','@ExceptionHandler','@ControllerAdvice','Profiles','Actuator basics']],
-  ['JPA and Hibernate', ['What is JPA?','What is Hibernate?','Entity','Entity lifecycle','Persistence Context','EntityManager','@Entity','@Id','@GeneratedValue','@OneToOne','@OneToMany','@ManyToOne','@ManyToMany','Lazy loading','Eager loading','N+1 query problem','JPQL','Native queries','Pagination','Transactions','Dirty checking','First-level cache','Optimistic locking','Pessimistic locking']],
-  ['Spring Security', ['Authentication vs Authorization','Spring Security architecture','Security Filter Chain','Password hashing','Authentication','Authorization','Roles','Authorities','JWT authentication','Stateless authentication','JWT filters','CORS','CSRF basics','Method-level security']],
-  ['Testing', ['Unit testing','JUnit 5','Assertions','Mockito','Mocking','Service testing','Controller testing','Repository testing','Integration testing','@SpringBootTest','MockMvc','Testcontainers basics']]
+  ['JavaScript + TypeScript Foundation (2 weeks)', [
+    'Scope and lexical environment',
+    'Hoisting',
+    'Closures',
+    'this',
+    'call, apply, bind',
+    'Prototypes',
+    'Prototype chain',
+    'Classes',
+    'Higher-order functions',
+    'Destructuring',
+    'Spread/rest',
+    'Modules',
+    'Error handling',
+    'Callbacks',
+    'Promises',
+    'async/await',
+    'Promise chaining',
+    'Promise.all',
+    'Promise.allSettled',
+    'Promise.race',
+    'Promise.any',
+    'Event loop',
+    'Microtasks',
+    'Macrotasks',
+    'process.nextTick()',
+    'setImmediate()',
+    'Types vs interfaces',
+    'Union/intersection',
+    'Generics',
+    'Type narrowing',
+    'Type guards',
+    'Utility types',
+    'keyof',
+    'typeof',
+    'unknown vs any',
+    'Generic constraints',
+    'Conditional types',
+    'Type inference',
+    'Strict mode',
+    'tsconfig'
+  ]],
+  ['Node.js Deep Dive (2 weeks)', [
+    'V8',
+    'libuv',
+    'Event loop',
+    'Event-loop phases',
+    'Call stack',
+    'Thread pool',
+    'Non-blocking I/O',
+    'Main thread',
+    'CPU-bound vs I/O-bound work',
+    'fs',
+    'path',
+    'http',
+    'events',
+    'buffer',
+    'stream',
+    'crypto',
+    'process',
+    'child_process',
+    'worker_threads',
+    'Readable streams',
+    'Writable streams',
+    'Duplex streams',
+    'Transform streams',
+    'Backpressure',
+    'Piping',
+    'Event-loop blocking',
+    'Memory leaks',
+    'Garbage collection',
+    'Heap',
+    'CPU profiling',
+    'Worker threads',
+    'Connection pooling',
+    'Keep-alive'
+  ]],
+  ['Backend Engineering (2 weeks)', [
+    'HTTP methods',
+    'Status codes',
+    'Headers',
+    'Request/response lifecycle',
+    'Pagination',
+    'Filtering',
+    'Sorting',
+    'API versioning',
+    'Idempotency',
+    'Error handling',
+    'Validation',
+    'Swagger/OpenAPI',
+    'Middleware',
+    'Controllers',
+    'Services',
+    'Dependency injection',
+    'Guards',
+    'Pipes',
+    'Interceptors',
+    'Exception filters',
+    'Custom decorators',
+    'Configuration',
+    'Logging',
+    'Sessions',
+    'Cookies',
+    'JWT',
+    'Access tokens',
+    'Refresh tokens',
+    'OAuth 2.0',
+    'Password hashing',
+    'RBAC',
+    'Permissions',
+    'CORS',
+    'CSRF',
+    'XSS',
+    'SQL injection',
+    'Rate limiting',
+    'Input validation',
+    'Secrets management'
+  ]],
+  ['PostgreSQL (1 week)', [
+    'JOINs',
+    'Subqueries',
+    'CTEs',
+    'Aggregations',
+    'Window functions',
+    'EXISTS',
+    'CASE',
+    'Transactions',
+    'ACID',
+    'Indexes',
+    'Composite indexes',
+    'Partial indexes',
+    'Query planner',
+    'EXPLAIN',
+    'EXPLAIN ANALYZE',
+    'Isolation levels',
+    'Locks',
+    'Deadlocks',
+    'Connection pooling',
+    'Partitioning basics',
+    'Replication basics'
+  ]],
+  ['Redis (1 week)', [
+    'Caching',
+    'TTL',
+    'Cache-aside',
+    'Cache invalidation',
+    'Distributed locks',
+    'Pub/Sub',
+    'Sorted sets',
+    'Lists',
+    'Sets',
+    'Redis transactions',
+    'Eviction policies',
+    'Memory management',
+    'Redis Cluster basics',
+    'Why use Redis instead of PostgreSQL for caching?',
+    'What is cache-aside?',
+    'What is cache invalidation?',
+    'What is TTL?',
+    'What happens during a cache hit/miss?',
+    'What happens if Redis goes down?',
+    'What are Redis data types and when would you use each?',
+    'What is Redis Pub/Sub?',
+    'Pub/Sub vs Redis Streams?',
+    'What is a distributed lock?',
+    'How would you implement rate limiting using Redis?',
+    'What are RDB and AOF?',
+    'What happens when Redis memory is full?',
+    'What is Redis replication?',
+    'What is Redis Cluster?',
+    'How does BullMQ use Redis?',
+    'How do you prevent stale cache?',
+    'How do you handle Redis failure in a Node.js application?'
+  ]],
+  ['Distributed Systems + Microservices (2 weeks)', [
+    'Monolith',
+    'Modular monolith',
+    'Microservices',
+    'Service boundaries',
+    'Database-per-service',
+    'Shared database problems',
+    'API Gateway',
+    'Service communication',
+    'REST',
+    'Async messaging',
+    'Events',
+    'Message brokers',
+    'Pub/Sub',
+    'Timeouts',
+    'Retries',
+    'Exponential backoff',
+    'Circuit breakers',
+    'Idempotency',
+    'Dead-letter queues',
+    'Two-phase commit basics',
+    'Saga pattern',
+    'Queues',
+    'Producer/consumer',
+    'Retry',
+    'Delayed jobs',
+    'Job priority',
+    'Concurrency',
+    'Failure handling',
+    'At-least-once delivery',
+    'Job idempotency'
+  ]]
 ];
 const today = () => new Date().toISOString().slice(0, 10);
 const initialData = (): AppData => ({ version: 3, weeks: outline.map(([title, names], i) => ({ id: `phase-${i + 1}`, number: i + 1, title, topics: names.map((title, j) => ({ id: `java-p${i + 1}-t${j + 1}`, title, status: 'not-started' as Status, notes: '', studyMinutes: 0, updatedAt: new Date().toISOString() })) })), sessions: [] });
@@ -48,6 +242,16 @@ export default function App() {
   const weeklyMinutes = data.sessions.filter(s => { const d = new Date(`${s.date}T12:00:00`); const now = new Date(); const monday = new Date(now); monday.setDate(now.getDate() - (now.getDay() + 6) % 7); monday.setHours(0,0,0,0); return d >= monday; }).reduce((a, s) => a + s.minutes, 0);
   const streak = useMemo(() => { const days = new Set(data.sessions.filter(s => s.minutes > 0).map(s => s.date)); let n = 0; const cursor = new Date(); if (!days.has(today())) cursor.setDate(cursor.getDate() - 1); while (days.has(cursor.toISOString().slice(0, 10))) { n++; cursor.setTime(cursor.getTime() - day); } return n; }, [data.sessions]);
   useEffect(() => { localStorage.setItem(key, JSON.stringify(data)); localData.current = data; }, [data]);
+  useEffect(() => {
+    const handler = (e: any) => {
+      const detail = e?.detail ?? {};
+      const { date, minutes } = detail;
+      if (!date || typeof minutes !== 'number') return;
+      setData(d => ({ ...d, sessions: [...d.sessions, { id: crypto.randomUUID(), date, minutes }] }));
+    };
+    window.addEventListener('study:added', handler as EventListener);
+    return () => window.removeEventListener('study:added', handler as EventListener);
+  }, []);
   useEffect(() => { let active = true; const sync = async () => { try { const response = await fetch(apiUrl('/api/tracker')); if (!response.ok) throw new Error('Could not load tracker'); const remote = await response.json(); if (!active) return; if (remote?.data?.version === 3 && Array.isArray(remote.data.weeks)) setData(remote.data); else await fetch(apiUrl('/api/tracker'), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: localData.current }) }); } catch { /* Local storage remains available when the API is offline. */ } finally { if (active) setRemoteReady(true); } }; void sync(); return () => { active = false; }; }, []);
   useEffect(() => { if (!remoteReady) return; const timer = window.setTimeout(() => { void fetch(apiUrl('/api/tracker'), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data }) }).catch(() => { /* Changes remain in local storage and retry next visit. */ }); }, 350); return () => window.clearTimeout(timer); }, [data, remoteReady]);
   useEffect(() => { const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; document.documentElement.dataset.theme = data.theme ?? preferred; }, [data.theme]);
@@ -56,12 +260,68 @@ export default function App() {
   const selectedTopic = allTopics.find(t => t.id === selected);
   const nav = [['dashboard','Dashboard'],['roadmap','Roadmap'],['study','Study'],['settings','Settings']] as const;
 
-  return <div className="app-shell"><aside><div className="brand"><span>⌁</span><div>JAVA <small>BACKEND LEARNING TRACKER</small></div></div><nav>{nav.map(([id, label]) => <button className={page === id ? 'active' : ''} onClick={() => setPage(id)} key={id}>{label}</button>)}</nav><div className="side-foot"><span>🔥 {streak} day streak</span><span>{stats.done} topics completed</span></div></aside><main><header><div><p className="eyebrow">PERSONAL JAVA ROADMAP</p><h1>{page === 'dashboard' ? 'Good to see you.' : page[0].toUpperCase() + page.slice(1)}</h1></div><button className="theme" onClick={() => setData(d => ({ ...d, theme: (d.theme ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark' ? 'light' : 'dark' }))}>◐ <span>Theme</span></button></header>
+  function TimerController({ page }: { page: string }) {
+    try {
+      const { start, stop } = useStudyTimer();
+      useEffect(() => {
+        if (page === 'dashboard') start();
+        else stop();
+        return () => stop();
+      }, [page]);
+    } catch (e) {
+      // hook not available if provider not mounted yet
+    }
+    return null;
+  }
+
+  function LiveTimer({ page }: { page: string }) {
+    try {
+      const { secondsToday } = useStudyTimer();
+      if (page !== 'dashboard') return null;
+      const mins = Math.floor(secondsToday / 60);
+      const secs = secondsToday % 60;
+      // also update the dashboard card display so it increments live
+      try {
+        const saved = localStorage.getItem(key);
+        let base = 0;
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed.sessions)) base = parsed.sessions.filter((s: any) => s.date === today()).reduce((a: number, s: any) => a + (s.minutes || 0), 0);
+          } catch {}
+        }
+        const liveTotal = base + mins;
+        const h2 = document.querySelector('.card.study-mini h2');
+        if (h2) h2.textContent = minutes(liveTotal);
+        const small = document.querySelector('.card.study-mini small.live');
+        if (small) small.textContent = `Live: ${secs}s`;
+      } catch {}
+      return <div className="live-timer">Live: {mins}m {secs}s</div>;
+    } catch {
+      return null;
+    }
+  }
+
+  return <StudyTimerProvider>
+    <div className="app-shell">
+      <TimerController page={page} />
+      <aside>
+        <div className="brand"><span>⌁</span><div>JAVA <small>BACKEND LEARNING TRACKER</small></div></div>
+        <nav>{nav.map(([id, label]) => <button className={page === id ? 'active' : ''} onClick={() => setPage(id)} key={id}>{label}</button>)}</nav>
+        <div className="side-foot"><span>🔥 {streak} day streak</span><span>{stats.done} topics completed</span></div>
+      </aside>
+      <main>
+        <header>
+          <div><p className="eyebrow">PERSONAL JAVA ROADMAP</p><h1>{page === 'dashboard' ? 'Good to see you.' : page[0].toUpperCase() + page.slice(1)}</h1></div>
+          <LiveTimer page={page} />
+          <button className="theme" onClick={() => setData(d => ({ ...d, theme: (d.theme ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark' ? 'light' : 'dark' }))}>◐ <span>Theme</span></button>
+        </header>
+    
     {page === 'dashboard' && <Dashboard stats={stats} data={data} allTopics={allTopics} current={current} weeklyMinutes={weeklyMinutes} streak={streak} setPage={setPage} select={setSelected} />}
     {page === 'roadmap' && <Roadmap weeks={data.weeks} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} weekFilter={weekFilter} setWeekFilter={setWeekFilter} setSelected={setSelected} updateTopic={updateTopic} />}
     {page === 'study' && <Study sessions={data.sessions} weekly={weeklyMinutes} add={addSession} />}
     {page === 'settings' && <Settings theme={data.theme} setTheme={(theme: 'light' | 'dark') => setData(d => ({ ...d, theme }))} reset={() => { if (confirm('Are you sure? This will delete all learning progress, notes and study history.')) setData(initialData()); }} />}
-  </main>{selectedTopic && <TopicModal topic={selectedTopic} week={selectedTopic.week} currentId={data.currentTopicId} close={() => setSelected(null)} update={updateTopic} setCurrent={() => setData(d => ({ ...d, currentTopicId: selectedTopic.id }))} />}</div>;
+  </main>{selectedTopic && <TopicModal topic={selectedTopic} week={selectedTopic.week} currentId={data.currentTopicId} close={() => setSelected(null)} update={updateTopic} setCurrent={() => setData(d => ({ ...d, currentTopicId: selectedTopic.id }))} />}</div></StudyTimerProvider>;
 }
 
 function Dashboard({ stats, data, allTopics, current, weeklyMinutes, streak, setPage, select }: any) { const todayMinutes = data.sessions.filter((s: Session) => s.date === today()).reduce((a: number, s: Session) => a + s.minutes, 0); return <><section className="hero card"><div><p className="eyebrow">JAVA BACKEND LEARNING PROGRESS</p><h2>{stats.pct}% complete</h2><p>{stats.done} of {stats.total} topics completed</p></div><Progress value={stats.pct} /><button className="outline" onClick={() => setPage('roadmap')}>Open roadmap →</button></section><section className="stat-grid"><Stat label="Total topics" value={stats.total} /><Stat label="Completed" value={stats.done} note={`${stats.pct}% of roadmap`} /><Stat label="Learning" value={stats.learning} /><Stat label="Revision" value={stats.revision} /><Stat label="Study this week" value={minutes(weeklyMinutes)} /><Stat label="Study streak" value={`🔥 ${streak} days`} /></section><section className="dashboard-grid"><div className="card current"><p className="eyebrow">CURRENT TOPIC</p>{current ? <><h2>{current.title}</h2><p>Phase {current.week.number} · {current.week.title}</p><span className={`badge ${current.status}`}>{statusMeta[current.status as Status][0]} {statusMeta[current.status as Status][1]}</span><button onClick={() => select(current.id)}>Open details</button></> : <><h2>Choose your next topic</h2><p>Set a topic as current to keep your focus clear.</p><button onClick={() => setPage('roadmap')}>Browse roadmap</button></>}</div><div className="card study-mini"><p className="eyebrow">TODAY'S STUDY</p><h2>{minutes(todayMinutes)}</h2><p>This week: {minutes(weeklyMinutes)}</p><button onClick={() => setPage('study')}>Log study time →</button></div></section><section><div className="section-title"><div><p className="eyebrow">14-PHASE ROADMAP</p><h2>Phase progress</h2></div><button className="text-button" onClick={() => setPage('roadmap')}>View all topics</button></div><div className="week-grid">{data.weeks.map((w: Week) => { const completed = w.topics.filter(t => t.status === 'completed').length; const pct = Math.round(completed / w.topics.length * 100); return <button className="week-card" key={w.id} onClick={() => { setPage('roadmap'); }}><small>PHASE {w.number}</small><h3>{w.title}</h3><Progress value={pct} compact /><p>{completed} / {w.topics.length} completed <b>{pct}%</b></p></button>; })}</div></section></> }

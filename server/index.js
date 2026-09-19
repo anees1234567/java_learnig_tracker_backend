@@ -32,7 +32,7 @@ app.get('/api/tracker', async (_request, response) => {
 
 app.put('/api/tracker', async (request, response) => {
   const { data } = request.body ?? {};
-  if (!data || data.version !== 3 || !Array.isArray(data.weeks) || !Array.isArray(data.sessions)) {
+  if (!data || ![3, 4].includes(data.version) || !Array.isArray(data.weeks) || !Array.isArray(data.sessions)) {
     return response.status(400).json({ error: 'Invalid tracker data.' });
   }
   await trackers.updateOne({ _id: TRACKER_ID }, { $set: { data, updatedAt: new Date() } }, { upsert: true });
@@ -45,7 +45,7 @@ app.post('/api/session', async (request, response) => {
     if (!date || typeof minutes !== 'number') return response.status(400).json({ error: 'Invalid payload' });
 
     const tracker = await trackers.findOne({ _id: TRACKER_ID });
-    const data = tracker?.data ?? { version: 3, weeks: [], sessions: [] };
+    const data = tracker?.data ?? { version: 4, weeks: [], sessions: [] };
     if (!Array.isArray(data.sessions)) data.sessions = [];
     // merge minutes into today's session (aggregate per date)
     const idx = data.sessions.findIndex(s => s.date === date);

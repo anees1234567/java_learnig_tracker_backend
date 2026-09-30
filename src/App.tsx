@@ -9,7 +9,23 @@ type Session = { id: string; date: string; minutes: number; topicId?: string };
 type AppData = { version: 4; weeks: Week[]; sessions: Session[]; currentTopicId?: string; theme?: 'light' | 'dark' };
 
 const javaOutline: [string, string[]][] = [
-  ['Java Foundations (1 week)', ['Java syntax', 'JVM basics', 'OOP', 'Strings', 'Memory']],
+  ['Java Foundations (4–5 days)', [
+    'JDK vs JRE vs JVM',
+    'How Java code executes: Source → javac → bytecode → JVM → interpreter/JIT → machine code',
+    'main() method',
+    'Primitive types',
+    'Reference types',
+    'Wrapper classes',
+    'Autoboxing / unboxing',
+    'Type casting',
+    'Operators',
+    'if, switch, loops',
+    'Arrays',
+    'Methods',
+    'Method parameters',
+    'Pass-by-value in Java',
+    'String, StringBuilder, StringBuffer'
+  ]],
   ['Java Collections (1 week)', ['Collections', 'ArrayList', 'LinkedList', 'HashSet', 'HashMap', 'TreeMap', 'Comparable', 'Comparator']],
   ['Java Generics + Functional Programming (1 week)', ['Generics', 'Exceptions', 'Lambda', 'Functional interfaces', 'Optional']],
   ['Java Streams (1 week)', ['Streams', 'Collectors', 'Grouping', 'Map/reduce/filter', 'Stream coding problems']],
@@ -18,7 +34,7 @@ const javaOutline: [string, string[]][] = [
   ['Java Design + JVM Internals (1 week)', ['SOLID', 'Design patterns', 'JVM internals', 'Garbage collection', 'Modern Java']],
   ['Java Interview Preparation + Revision (1 week)', ['Interview questions', 'Java coding', 'Mock interview problems', 'Revision']]
 ];
-const isJavaPhase = (week: Week) => javaOutline.some(([title], index) => week.id === `phase-java-${index + 1}` || week.title === title);
+const isJavaPhase = (week: Week) => javaOutline.some(([title], index) => week.id === `phase-java-${index + 1}` || week.title === title || (index === 0 && week.title === 'Java Foundations (1 week)'));
 
 const outline: [string, string[]][] = [
   ['JavaScript + TypeScript Foundation (2 weeks)', [
@@ -238,9 +254,12 @@ const appendJavaPhases = (weeks: Week[], existingWeeks: Week[] = []): Week[] => 
   ...weeks,
   ...javaOutline.map(([title, names], index) => {
     const id = `phase-java-${index + 1}`;
-    const existing = existingWeeks.find(week => week.id === id || week.title === title);
-    const topics = [...(existing?.topics ?? [])];
-    names.forEach((name, topicIndex) => {
+    const existing = existingWeeks.find(week => week.id === id || week.title === title || (index === 0 && week.title === 'Java Foundations (1 week)'));
+    const topics = index === 0
+      ? names.map((name, topicIndex) => existing?.topics.find(topic => topic.title === name)
+        ?? makeTopic(name, `java-foundations-v2-t${topicIndex + 1}`))
+      : [...(existing?.topics ?? [])];
+    if (index !== 0) names.forEach((name, topicIndex) => {
       if (!topics.some(topic => topic.title === name)) topics.push(makeTopic(name, `java-w${index + 1}-t${topicIndex + 1}`));
     });
     return { ...existing, id: existing?.id ?? id, number: weeks.length + index + 1, title, topics };
@@ -260,7 +279,7 @@ const upgradeCurriculum = (value: any): AppData => {
   const completedNestTopics = nestJsTopics.map((title, index) => topicsByTitle.get(title) ?? makeTopic(title, `nestjs-t${index + 1}`));
   const completedWeeks = appendJavaPhases([...weeksWithoutMovedTopics, { id: nestModule?.id ?? 'phase-nestjs', number: weeksWithoutMovedTopics.length + 1, title: nestJsModuleTitle, topics: completedNestTopics }]
     .map((week, index) => ({ ...week, number: index + 1 })), existingWeeks);
-  return { version: 4, weeks: completedWeeks, sessions: Array.isArray(value?.sessions) ? value.sessions : topicSessions(completedWeeks), currentTopicId: value?.currentTopicId, theme: value?.theme };
+  return { version: 4, weeks: completedWeeks, sessions: Array.isArray(value?.sessions) ? value.sessions : topicSessions(completedWeeks), currentTopicId: completedWeeks.some(week => week.topics.some(topic => topic.id === value?.currentTopicId)) ? value.currentTopicId : undefined, theme: value?.theme };
 };
 const load = (): AppData => { try { const saved = localStorage.getItem(key); return saved ? upgradeCurriculum(JSON.parse(saved)) : initialData(); } catch { return initialData(); } };
 const statusMeta: Record<Status, [string, string]> = { 'not-started': ['○', 'Not Started'], learning: ['◉', 'Learning'], completed: ['✓', 'Completed'], revision: ['↻', 'Revision'] };

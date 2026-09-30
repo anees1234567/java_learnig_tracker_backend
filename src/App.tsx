@@ -8,6 +8,18 @@ type Week = { id: string; number: number; title: string; topics: Topic[] };
 type Session = { id: string; date: string; minutes: number; topicId?: string };
 type AppData = { version: 4; weeks: Week[]; sessions: Session[]; currentTopicId?: string; theme?: 'light' | 'dark' };
 
+const javaOutline: [string, string[]][] = [
+  ['Java Foundations (1 week)', ['Java syntax', 'JVM basics', 'OOP', 'Strings', 'Memory']],
+  ['Java Collections (1 week)', ['Collections', 'ArrayList', 'LinkedList', 'HashSet', 'HashMap', 'TreeMap', 'Comparable', 'Comparator']],
+  ['Java Generics + Functional Programming (1 week)', ['Generics', 'Exceptions', 'Lambda', 'Functional interfaces', 'Optional']],
+  ['Java Streams (1 week)', ['Streams', 'Collectors', 'Grouping', 'Map/reduce/filter', 'Stream coding problems']],
+  ['Java Threading + Synchronization (1 week)', ['Threads', 'Race conditions', 'Synchronization', 'volatile', 'Atomic classes', 'Locks']],
+  ['Java Concurrency (1 week)', ['ExecutorService', 'Thread pools', 'Future', 'CompletableFuture', 'ConcurrentHashMap', 'Concurrency problems']],
+  ['Java Design + JVM Internals (1 week)', ['SOLID', 'Design patterns', 'JVM internals', 'Garbage collection', 'Modern Java']],
+  ['Java Interview Preparation + Revision (1 week)', ['Interview questions', 'Java coding', 'Mock interview problems', 'Revision']]
+];
+const isJavaPhase = (week: Week) => javaOutline.some(([title], index) => week.id === `phase-java-${index + 1}` || week.title === title);
+
 const outline: [string, string[]][] = [
   ['JavaScript + TypeScript Foundation (2 weeks)', [
     'Scope and lexical environment',
@@ -222,20 +234,32 @@ const nestJsModuleTitle = 'NestJS Complete Learning (3 weeks)';
 const nestJsTopics = outline.find(([title]) => title === nestJsModuleTitle)![1];
 const nestJsBuildingBlocks = new Set(['Middleware', 'Controllers', 'Services', 'Dependency injection', 'Guards', 'Pipes', 'Interceptors', 'Exception filters', 'Custom decorators', 'Swagger/OpenAPI']);
 const makeTopic = (title: string, id: string): Topic => ({ id, title, status: 'not-started', notes: '', studyMinutes: 0, updatedAt: new Date().toISOString() });
-const initialData = (): AppData => ({ version: 4, weeks: outline.map(([title, names], i) => ({ id: title === nestJsModuleTitle ? 'phase-nestjs' : `phase-${i + 1}`, number: i + 1, title, topics: names.map((title, j) => makeTopic(title, `topic-p${i + 1}-t${j + 1}`)) })), sessions: [] });
+const appendJavaPhases = (weeks: Week[], existingWeeks: Week[] = []): Week[] => [
+  ...weeks,
+  ...javaOutline.map(([title, names], index) => {
+    const id = `phase-java-${index + 1}`;
+    const existing = existingWeeks.find(week => week.id === id || week.title === title);
+    const topics = [...(existing?.topics ?? [])];
+    names.forEach((name, topicIndex) => {
+      if (!topics.some(topic => topic.title === name)) topics.push(makeTopic(name, `java-w${index + 1}-t${topicIndex + 1}`));
+    });
+    return { ...existing, id: existing?.id ?? id, number: weeks.length + index + 1, title, topics };
+  })
+];
+const initialData = (): AppData => ({ version: 4, weeks: appendJavaPhases(outline.map(([title, names], i) => ({ id: title === nestJsModuleTitle ? 'phase-nestjs' : `phase-${i + 1}`, number: i + 1, title, topics: names.map((title, j) => makeTopic(title, `topic-p${i + 1}-t${j + 1}`)) }))), sessions: [] });
 const key = 'learning-tracker-v1';
 const apiUrl = (path: string) => `${import.meta.env.VITE_API_URL ?? ''}${path}`;
 const topicSessions = (weeks: Week[]): Session[] => weeks.flatMap(week => week.topics.filter(topic => topic.studyMinutes > 0).map(topic => ({ id: `topic-study-${topic.id}`, topicId: topic.id, date: (topic.updatedAt || new Date().toISOString()).slice(0, 10), minutes: topic.studyMinutes })));
 const upgradeCurriculum = (value: any): AppData => {
   const existingWeeks: Week[] = Array.isArray(value?.weeks) ? value.weeks.map((week: Week) => ({ ...week, topics: Array.isArray(week.topics) ? week.topics : [] })) : [];
   const nestModule = existingWeeks.find(week => week.title === nestJsModuleTitle);
-  const movedTopics = existingWeeks.filter(week => week !== nestModule).flatMap(week => week.topics.filter(topic => nestJsBuildingBlocks.has(topic.title)));
-  const weeksWithoutMovedTopics = existingWeeks.filter(week => week !== nestModule).map(week => ({ ...week, topics: week.topics.filter(topic => !nestJsBuildingBlocks.has(topic.title)) }));
+  const movedTopics = existingWeeks.filter(week => week !== nestModule && !isJavaPhase(week)).flatMap(week => week.topics.filter(topic => nestJsBuildingBlocks.has(topic.title)));
+  const weeksWithoutMovedTopics = existingWeeks.filter(week => week !== nestModule && !isJavaPhase(week)).map(week => ({ ...week, topics: week.topics.filter(topic => !nestJsBuildingBlocks.has(topic.title)) }));
   const topicsByTitle = new Map<string, Topic>();
   [...movedTopics, ...(nestModule?.topics ?? [])].forEach(topic => { if (!topicsByTitle.has(topic.title)) topicsByTitle.set(topic.title, topic); });
   const completedNestTopics = nestJsTopics.map((title, index) => topicsByTitle.get(title) ?? makeTopic(title, `nestjs-t${index + 1}`));
-  const completedWeeks = [...weeksWithoutMovedTopics, { id: nestModule?.id ?? 'phase-nestjs', number: weeksWithoutMovedTopics.length + 1, title: nestJsModuleTitle, topics: completedNestTopics }]
-    .map((week, index) => ({ ...week, number: index + 1 }));
+  const completedWeeks = appendJavaPhases([...weeksWithoutMovedTopics, { id: nestModule?.id ?? 'phase-nestjs', number: weeksWithoutMovedTopics.length + 1, title: nestJsModuleTitle, topics: completedNestTopics }]
+    .map((week, index) => ({ ...week, number: index + 1 })), existingWeeks);
   return { version: 4, weeks: completedWeeks, sessions: Array.isArray(value?.sessions) ? value.sessions : topicSessions(completedWeeks), currentTopicId: value?.currentTopicId, theme: value?.theme };
 };
 const load = (): AppData => { try { const saved = localStorage.getItem(key); return saved ? upgradeCurriculum(JSON.parse(saved)) : initialData(); } catch { return initialData(); } };
